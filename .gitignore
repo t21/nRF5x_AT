@@ -1,1 +1,6 @@
-hej
+_build
+.metadata
+RemoteSystemsTempFiles
+.cproject
+.project
+.settings
