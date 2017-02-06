@@ -37,7 +37,10 @@
 #include "fstorage.h"
 #include "ble_conn_state.h"
 #include "nrf_ble_gatt.h"
+
+#include "app_uart.h"
 #include "wble.h"
+#include "cli.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
@@ -101,6 +104,8 @@ int main(void)
     NRF_LOG_INFO("Booting up ...\r\n");
 
     wble_init();
+
+    cli_init();
 
     NRF_LOG_INFO("Boot ready ...\r\n");
 

@@ -159,7 +159,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
  */
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
-    ble_hrs_on_db_disc_evt(&m_ble_hrs_c, p_evt);
+//    ble_hrs_on_db_disc_evt(&m_ble_hrs_c, p_evt);
     ble_bas_on_db_disc_evt(&m_ble_bas_c, p_evt);
 }
 
@@ -634,7 +634,7 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     ble_conn_state_on_ble_evt(p_ble_evt);
     pm_on_ble_evt(p_ble_evt);
     ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);
-    ble_hrs_c_on_ble_evt(&m_ble_hrs_c, p_ble_evt);
+//    ble_hrs_c_on_ble_evt(&m_ble_hrs_c, p_ble_evt);
     ble_bas_c_on_ble_evt(&m_ble_bas_c, p_ble_evt);
     bsp_btn_ble_on_ble_evt(p_ble_evt);
     nrf_ble_gatt_on_ble_evt(&m_gatt, p_ble_evt);
@@ -787,46 +787,46 @@ void bsp_event_handler(bsp_event_t event)
 
 /**@brief Heart Rate Collector Handler.
  */
-static void hrs_c_evt_handler(ble_hrs_c_t * p_hrs_c, ble_hrs_c_evt_t * p_hrs_c_evt)
-{
-    uint32_t err_code;
-
-    switch (p_hrs_c_evt->evt_type)
-    {
-        case BLE_HRS_C_EVT_DISCOVERY_COMPLETE:
-            err_code = ble_hrs_c_handles_assign(p_hrs_c ,
-                                                p_hrs_c_evt->conn_handle,
-                                                &p_hrs_c_evt->params.peer_db);
-            APP_ERROR_CHECK(err_code);
-
-            // Initiate bonding.
-            err_code = pm_conn_secure(p_hrs_c_evt->conn_handle, false);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
-
-            // Heart rate service discovered. Enable notification of Heart Rate Measurement.
-            err_code = ble_hrs_c_hrm_notif_enable(p_hrs_c);
-            APP_ERROR_CHECK(err_code);
-
-            NRF_LOG_DEBUG("Heart rate service discovered.\r\n");
-            break;
-
-        case BLE_HRS_C_EVT_HRM_NOTIFICATION:
-        {
-            NRF_LOG_INFO("Heart Rate = %d.\r\n", p_hrs_c_evt->params.hrm.hr_value);
-            for (int i = 0; i < p_hrs_c_evt->params.hrm.rr_intervals_cnt; i++)
-            {
-                NRF_LOG_DEBUG("rr_interval = %d.\r\n", p_hrs_c_evt->params.hrm.rr_intervals[i]);
-            }
-            break;
-        }
-
-        default:
-            break;
-    }
-}
+//static void hrs_c_evt_handler(ble_hrs_c_t * p_hrs_c, ble_hrs_c_evt_t * p_hrs_c_evt)
+//{
+//    uint32_t err_code;
+//
+//    switch (p_hrs_c_evt->evt_type)
+//    {
+//        case BLE_HRS_C_EVT_DISCOVERY_COMPLETE:
+//            err_code = ble_hrs_c_handles_assign(p_hrs_c ,
+//                                                p_hrs_c_evt->conn_handle,
+//                                                &p_hrs_c_evt->params.peer_db);
+//            APP_ERROR_CHECK(err_code);
+//
+//            // Initiate bonding.
+//            err_code = pm_conn_secure(p_hrs_c_evt->conn_handle, false);
+//            if (err_code != NRF_ERROR_INVALID_STATE)
+//            {
+//                APP_ERROR_CHECK(err_code);
+//            }
+//
+//            // Heart rate service discovered. Enable notification of Heart Rate Measurement.
+//            err_code = ble_hrs_c_hrm_notif_enable(p_hrs_c);
+//            APP_ERROR_CHECK(err_code);
+//
+//            NRF_LOG_DEBUG("Heart rate service discovered.\r\n");
+//            break;
+//
+//        case BLE_HRS_C_EVT_HRM_NOTIFICATION:
+//        {
+//            NRF_LOG_INFO("Heart Rate = %d.\r\n", p_hrs_c_evt->params.hrm.hr_value);
+//            for (int i = 0; i < p_hrs_c_evt->params.hrm.rr_intervals_cnt; i++)
+//            {
+//                NRF_LOG_DEBUG("rr_interval = %d.\r\n", p_hrs_c_evt->params.hrm.rr_intervals[i]);
+//            }
+//            break;
+//        }
+//
+//        default:
+//            break;
+//    }
+//}
 
 
 /**@brief Battery level Collector Handler.
@@ -880,15 +880,15 @@ static void bas_c_evt_handler(ble_bas_c_t * p_bas_c, ble_bas_c_evt_t * p_bas_c_e
 /**
  * @brief Heart rate collector initialization.
  */
-static void hrs_c_init(void)
-{
-    ble_hrs_c_init_t hrs_c_init_obj;
-
-    hrs_c_init_obj.evt_handler = hrs_c_evt_handler;
-
-    uint32_t err_code = ble_hrs_c_init(&m_ble_hrs_c, &hrs_c_init_obj);
-    APP_ERROR_CHECK(err_code);
-}
+//static void hrs_c_init(void)
+//{
+//    ble_hrs_c_init_t hrs_c_init_obj;
+//
+//    hrs_c_init_obj.evt_handler = hrs_c_evt_handler;
+//
+//    uint32_t err_code = ble_hrs_c_init(&m_ble_hrs_c, &hrs_c_init_obj);
+//    APP_ERROR_CHECK(err_code);
+//}
 
 
 /**
@@ -1019,8 +1019,8 @@ static void scan_start(void)
                            whitelist_irks,  &irk_cnt);
 
     m_scan_param.active   = 0;
-    m_scan_param.interval = SCAN_INTERVAL;
-    m_scan_param.window   = SCAN_WINDOW;
+//    m_scan_param.interval = SCAN_INTERVAL;
+//    m_scan_param.window   = SCAN_WINDOW;
 
     if (((addr_cnt == 0) && (irk_cnt == 0)) ||
         (m_whitelist_disabled))
@@ -1082,24 +1082,6 @@ static void buttons_leds_init(bool * p_erase_bonds)
 }
 
 
-/**@brief Function for initializing the nrf log module.
- */
-//static void log_init(void)
-//{
-//    ret_code_t err_code = NRF_LOG_INIT(NULL);
-//    APP_ERROR_CHECK(err_code);
-//}
-
-
-/** @brief Function for the Power manager.
- */
-//static void power_manage(void)
-//{
-//    uint32_t err_code = sd_app_evt_wait();
-//    APP_ERROR_CHECK(err_code);
-//}
-
-
 /* GATT generic Event handler. */
 void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t * p_evt)
 {
@@ -1139,9 +1121,7 @@ int wble_init(void)
     bool erase_bonds;
 
     // Initialize.
-//    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, NULL);
     buttons_leds_init(&erase_bonds);
-//    log_init();
     ble_stack_init();
     peer_manager_init(erase_bonds);
     if (erase_bonds == true)
@@ -1150,21 +1130,68 @@ int wble_init(void)
     }
     gatt_init();
     db_discovery_init();
-    hrs_c_init();
+//    hrs_c_init();
     bas_c_init();
 
     // Start scanning for peripherals and initiate connection
     // with devices that advertise Heart Rate UUID.
-    NRF_LOG_INFO("Heart rate collector example.\r\n");
-    scan_start();
-
-//    for (;;)
-//    {
-//        if (NRF_LOG_PROCESS() == false)
-//        {
-//            power_manage();
-//        }
-//    }
+    //NRF_LOG_INFO("Heart rate collector example.\r\n");
+    /* Setting scan parameters to default values */
+    m_scan_param.interval = SCAN_INTERVAL;
+    m_scan_param.window   = SCAN_WINDOW;
+    
+    //scan_start();
 }
 
 
+bool wble_get_cfg(uint8_t param_tag, uint8_t *resp_str, uint8_t *resp_str_len)
+{
+    uint32_t resp;
+// TODO: Add more options to read from    
+    switch (param_tag) {
+        case 9:
+            resp = m_scan_param.interval;
+            break;
+            
+        case 10:
+            resp = m_scan_param.window;
+            break;
+            
+        default:
+            return false;
+    }
+        
+    *resp_str_len = sprintf(resp_str, "+UBTLECFG:%d,%d\r\n", param_tag, resp);
+    
+    if (*resp_str_len < 0) {
+        return false;
+    }
+    
+    return true;
+}
+
+
+bool wble_set_cfg(uint8_t param_tag, uint8_t param_value)
+{
+    // TODO: Add more options to switch
+    switch (param_tag) {
+        case 9:
+            if ((param_value >= 16) && (param_value <= 16384) && (param_value >= m_scan_param.window)) {
+                m_scan_param.interval = param_value;
+            } else {
+                return false;
+            }
+            break;
+            
+        case 10:
+            if ((param_value >= 16) && (param_value <= 16384) && (param_value <= m_scan_param.interval)) {
+                m_scan_param.window = param_value;
+            } else {
+                return false;
+            }
+            break;
+            
+        default:
+            return false;
+    }
+}

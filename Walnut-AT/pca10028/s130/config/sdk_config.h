@@ -3042,10 +3042,18 @@
 #define APP_TWI_ENABLED 0
 #endif
 
+//==========================================================
+// <q> APP_FIFO_ENABLED  - app_fifo - Software FIFO implementation
+
+
+#ifndef APP_FIFO_ENABLED
+#define APP_FIFO_ENABLED 1
+#endif
+
 // <e> APP_UART_ENABLED - app_uart - UART driver
 //==========================================================
 #ifndef APP_UART_ENABLED
-#define APP_UART_ENABLED 0
+#define APP_UART_ENABLED 1
 #endif
 #if  APP_UART_ENABLED
 // <o> APP_UART_DRIVER_INSTANCE  - UART instance used
@@ -3591,7 +3599,7 @@
 // <4=> Debug 
 
 #ifndef NRF_LOG_DEFAULT_LEVEL
-#define NRF_LOG_DEFAULT_LEVEL 3
+#define NRF_LOG_DEFAULT_LEVEL 4
 #endif
 
 // <e> NRF_LOG_DEFERRED - Enable deffered logger.
