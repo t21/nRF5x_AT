@@ -85,7 +85,9 @@ Output/ble_app_hrs_c_pca10028_s130\ nrf51422_xxac/Obj/main.o: \
  ../../../../nRF5_SDK_12/components/ble/common/ble_conn_state.h \
  ../../../../nRF5_SDK_12/components/libraries/util/sdk_mapped_flags.h \
  ../../../../nRF5_SDK_12/components/ble/nrf_ble_gatt/nrf_ble_gatt.h \
+ ../../../../nRF5_SDK_12/components/libraries/uart/app_uart.h \
  /Users/thomas/GitHub/nRF5x_AT/Walnut-AT/pca10028/s130/embedded_studio/../../../wble.h \
+ /Users/thomas/GitHub/nRF5x_AT/Walnut-AT/pca10028/s130/embedded_studio/../../../cli.h \
  ../../../../nRF5_SDK_12/components/libraries/log/nrf_log.h \
  ../../../../nRF5_SDK_12/components/libraries/log/src/nrf_log_internal.h \
  ../../../../nRF5_SDK_12/components/libraries/log/nrf_log_ctrl.h \
