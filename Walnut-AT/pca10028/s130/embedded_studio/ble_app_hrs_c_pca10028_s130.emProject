@@ -34,8 +34,9 @@
       debug_additional_load_file="/Users/thomas/GitHub/nRF5x_AT/nRF5_SDK_12/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex"
       gcc_c_language_standard="gnu99"
       gcc_enable_all_warnings="No"
-      gcc_optimization_level="Debug"
+      gcc_optimization_level="None"
       link_use_linker_script_file="No"
+      linker_printf_width_precision_supported="Yes"
       linker_section_placement_file="flash_placement.xml"
       linker_section_placement_macros="FLASH_START=0x1b000;SRAM_START=0x20001eb0" />
     <folder Name="Application">

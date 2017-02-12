@@ -1,0 +1,79 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints">
+  <Exceptions set="HardFault"/>
+ </Breakpoints>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="ble_app_hrs_c_pca10028_s130" radix="16" sizeText="" addressText=""/>
+ </Memory1>
+ <Memory2>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="ble_app_hrs_c_pca10028_s130" radix="16" sizeText="" addressText=""/>
+ </Memory2>
+ <Memory3>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="ble_app_hrs_c_pca10028_s130" radix="16" sizeText="" addressText=""/>
+ </Memory3>
+ <Memory4>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="ble_app_hrs_c_pca10028_s130" radix="16" sizeText="" addressText=""/>
+ </Memory4>
+ <Project>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130"/>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130;ble_app_hrs_c_pca10028_s130"/>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130;ble_app_hrs_c_pca10028_s130;Application"/>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130;ble_app_hrs_c_pca10028_s130;Documentation"/>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130;ble_app_hrs_c_pca10028_s130;nRF_BLE"/>
+  <ProjectSessionItem path="ble_app_hrs_c_pca10028_s130;ble_app_hrs_c_pca10028_s130;nRF_BLE_Services"/>
+ </Project>
+ <Register1>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_hrs_c_pca10028_s130" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register1>
+ <Register2>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_hrs_c_pca10028_s130" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register2>
+ <Register3>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_hrs_c_pca10028_s130" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register3>
+ <Register4>
+  <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_hrs_c_pca10028_s130" decimalNodes="" octalNodes="" unsignedNodes=""/>
+ </Register4>
+ <TargetWindow programLoadAddress="" programSize="" uploadStartAddress="" programMemoryInterface="" programFileName="" uploadMemoryInterface="" programFileType="" uploadFileName="" uploadFileType="" programAction="" uploadSize=""/>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never">
+   <Watchpoint numelements="0" expression="m_scan_param" evalMode="0" name="m_scan_param" radix="-1" linenumber="1378" filename="../../../wble.c" list=""/>
+   <Watchpoint numelements="0" expression="dev_name" evalMode="0" name="dev_name" radix="-1" linenumber="367" filename="../../../wble.c" list=""/>
+   <Watchpoint numelements="0" expression="adv_data" evalMode="0" name="adv_data" radix="-1" linenumber="356" filename="../../../wble.c" list=""/>
+   <Watchpoint numelements="0" expression="p_adv_report" evalMode="1" name="p_adv_report" radix="-1" linenumber="349" filename="../../../wble.c" list=""/>
+  </Watches>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile x="30" y="88" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" debugPath="../../../main.c" selected="1" top="73" codecName="Default"/>
+  <SessionOpenFile x="0" y="3" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../cli.h" debugPath="../../../cli.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile x="4" y="32" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../cli.c" debugPath="../../../cli.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile x="43" y="3" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../cli_commands.h" debugPath="../../../cli_commands.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile x="0" y="53" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../cli_commands.c" debugPath="../../../cli_commands.c" selected="0" top="21" codecName="Default"/>
+  <SessionOpenFile x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="/Applications/SEGGER Embedded Studio 3.10i/include/string.h" debugPath="/Applications/SEGGER Embedded Studio 3.10i/include/string.h" selected="0" top="38" codecName="Default"/>
+  <SessionOpenFile x="16" y="702" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../wble.c" debugPath="../../../wble.c" selected="0" top="668" codecName="Default"/>
+  <SessionOpenFile x="47" y="39" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../wble.h" debugPath="../../../wble.h" selected="0" top="14" codecName="Default"/>
+  <SessionOpenFile x="4" y="102" useTextEdit="1" useBinaryEdit="0" left="0" path="/Applications/SEGGER Embedded Studio 3.10i/include/stdio.h" debugPath="/Applications/SEGGER Embedded Studio 3.10i/include/stdio.h" selected="0" top="85" codecName="Default"/>
+  <SessionOpenFile x="2" y="778" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../nRF5_SDK_12/components/softdevice/s130/headers/ble_gap.h" debugPath="../../../../nRF5_SDK_12/components/softdevice/s130/headers/ble_gap.h" selected="0" top="758" codecName="Default"/>
+  <SessionOpenFile x="0" y="49" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../nRF5_SDK_12/components/ble/ble_services/ble_bas_c/ble_bas_c.c" debugPath="../../../../nRF5_SDK_12/components/ble/ble_services/ble_bas_c/ble_bas_c.c" selected="0" top="18" codecName="Default"/>
+  <SessionOpenFile x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../nRF5_SDK_12/components/ble/ble_services/ble_bas_c/ble_bas_c.h" debugPath="../../../../nRF5_SDK_12/components/ble/ble_services/ble_bas_c/ble_bas_c.h" selected="0" top="69" codecName="Default"/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="ble_app_hrs_c_pca10028_s130" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="nrf51422_xxac" debugSearchFileMap="" fileDialogInitialDirectory="/Users/thomas/GitHub/nRF5x_AT/nRF5_SDK_12/components/libraries/fifo" debugSearchPath="" autoConnectCapabilities="3199"/>
+</session>

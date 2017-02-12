@@ -89,6 +89,15 @@ typedef struct
 } data_t;
 
 
+#define MAX_NUM_DEVICES 50
+typedef struct {
+    uint8_t addr[6];
+    bool    scan_resp_found;
+    bool    adv_found;
+} w_device_t;
+
+
+
 static ble_db_discovery_t    m_ble_db_discovery;           /**< Structure used to identify the DB Discovery module. */
 static ble_hrs_c_t           m_ble_hrs_c;                  /**< Structure used to identify the heart rate client module. */
 static ble_bas_c_t           m_ble_bas_c;                  /**< Structure used to identify the Battery Service client module. */
@@ -100,6 +109,9 @@ static nrf_ble_gatt_t        m_gatt;                       /**< Structure for ga
 
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
+
+static wble_discovery_type_t m_discovery_type;
+static wble_evt_handler_t p_callback;
 
 /**
  * @brief Connection parameters requested for connection.
@@ -127,6 +139,11 @@ static const ble_gap_addr_t m_target_periph_addr =
     .addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
     .addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
 };
+
+
+    static w_device_t m_found_devices_list[MAX_NUM_DEVICES];
+    static uint8_t m_num_devices;
+    
 
 
 static void scan_start(void);
@@ -329,6 +346,48 @@ static void sleep_mode_enter(void)
  * @param[in]   name_to_find   name to search.
  * @return   true if the given name was found, false otherwise.
  */
+static bool find_adv_flags(const ble_gap_evt_adv_report_t *p_adv_report, uint8_t flags)
+{
+    uint32_t err_code;
+    data_t   adv_data;
+    data_t   dev_name;
+
+    // Initialize advertisement report for parsing
+    adv_data.p_data     = (uint8_t *)p_adv_report->data;
+    adv_data.data_len   = p_adv_report->dlen;
+
+
+    //search for advertising names
+    err_code = adv_report_parse(BLE_GAP_AD_TYPE_FLAGS,
+                                &adv_data,
+                                &dev_name);
+    if (err_code == NRF_SUCCESS)
+    {
+//        if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len )== 0)
+        if ((flags & *dev_name.p_data) != 0)
+        {
+            return true;
+        }
+    }
+//    else
+//    {
+//        // Look for the short local name if it was not found as complete
+//        err_code = adv_report_parse(BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME,
+//                                    &adv_data,
+//                                    &dev_name);
+//        if (err_code != NRF_SUCCESS)
+//        {
+//            return false;
+//        }
+//        if (memcmp(m_target_periph_name, dev_name.p_data, dev_name.data_len )== 0)
+//        {
+//            return true;
+//        }
+//    }
+    return false;
+}
+
+
 static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const char * name_to_find)
 {
     uint32_t err_code;
@@ -445,6 +504,53 @@ static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const ui
 }
 
 
+static bool is_first_discovery(ble_gap_evt_adv_report_t adv_report)
+{  
+    for (int i = 0; i < m_num_devices; i++) {
+        if (adv_report.peer_addr.addr[0] == m_found_devices_list[i].addr[0] &&
+            adv_report.peer_addr.addr[1] == m_found_devices_list[i].addr[1] &&
+            adv_report.peer_addr.addr[2] == m_found_devices_list[i].addr[2] &&
+            adv_report.peer_addr.addr[3] == m_found_devices_list[i].addr[3] &&
+            adv_report.peer_addr.addr[4] == m_found_devices_list[i].addr[4] &&
+            adv_report.peer_addr.addr[5] == m_found_devices_list[i].addr[5])
+        {
+            if ((adv_report.scan_rsp == 0) && !m_found_devices_list[i].adv_found)
+            {
+                m_found_devices_list[i].adv_found = true;
+                return true;
+            }
+            if ((adv_report.scan_rsp == 1) && !m_found_devices_list[i].scan_resp_found)
+            {
+                m_found_devices_list[i].scan_resp_found = true;
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    if (m_num_devices < MAX_NUM_DEVICES)
+    {
+        m_found_devices_list[m_num_devices].addr[0] = adv_report.peer_addr.addr[0];
+        m_found_devices_list[m_num_devices].addr[1] = adv_report.peer_addr.addr[1];
+        m_found_devices_list[m_num_devices].addr[2] = adv_report.peer_addr.addr[2];
+        m_found_devices_list[m_num_devices].addr[3] = adv_report.peer_addr.addr[3];
+        m_found_devices_list[m_num_devices].addr[4] = adv_report.peer_addr.addr[4];
+        m_found_devices_list[m_num_devices].addr[5] = adv_report.peer_addr.addr[5];
+        if (adv_report.scan_rsp == 0)
+        {
+            m_found_devices_list[m_num_devices].adv_found = true;
+        }
+        else
+        {
+            m_found_devices_list[m_num_devices].scan_resp_found = true;
+        }
+        m_num_devices++;
+    }
+
+    return true;
+}
+
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -484,6 +590,42 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 
         case BLE_GAP_EVT_ADV_REPORT:
         {
+            ble_gap_evt_adv_report_t adv_report = p_gap_evt->params.adv_report;
+            if (m_discovery_type == WBLE_DISCOVERY_TYPE_ALL_ONCE) 
+            {
+                if (is_first_discovery(adv_report) && (p_callback != NULL))
+                {
+                    p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                }
+            } 
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_GENERAL_ONCE) 
+            {
+                if (find_adv_flags(&p_gap_evt->params.adv_report, BLE_GAP_ADV_FLAG_LE_GENERAL_DISC_MODE))
+                {
+                    if (is_first_discovery(adv_report) && (p_callback != NULL))
+                    {
+                        p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                    }
+                }
+            }
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_LIMITED_ONCE) 
+            {
+                if (find_adv_flags(&p_gap_evt->params.adv_report, BLE_GAP_ADV_FLAG_LE_LIMITED_DISC_MODE))
+                {
+                    if (is_first_discovery(adv_report) && (p_callback != NULL))
+                    {
+                        p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                    }
+                }
+            }
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_ALL_ALWAYS) 
+            {
+                if (p_callback != NULL) 
+                {
+                    p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                }
+            }
+            
             bool do_connect = false;
             if (is_connect_per_addr)
             {
@@ -557,7 +699,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_SCAN)
             {
                 NRF_LOG_DEBUG("Scan timed out.\r\n");
-                scan_start();
+                //scan_start();
+                p_callback(WBLE_EVT_SCAN_TIMEOUT, NULL);
             }
             else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
             {
@@ -1018,7 +1161,7 @@ static void scan_start(void)
     ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                            whitelist_irks,  &irk_cnt);
 
-    m_scan_param.active   = 0;
+//    m_scan_param.active   = 0;
 //    m_scan_param.interval = SCAN_INTERVAL;
 //    m_scan_param.window   = SCAN_WINDOW;
 
@@ -1034,7 +1177,7 @@ static void scan_start(void)
             m_scan_param.use_whitelist  = 0;
             m_scan_param.adv_dir_report = 0;
         #endif
-        m_scan_param.timeout  = 0x0000; // No timeout.
+//        m_scan_param.timeout  = 0x0000; // No timeout.
     }
     else
     {
@@ -1049,7 +1192,7 @@ static void scan_start(void)
             m_scan_param.use_whitelist  = 1;
             m_scan_param.adv_dir_report = 0;
         #endif
-        m_scan_param.timeout  = 0x001E; // 30 seconds.
+//        m_scan_param.timeout  = 0x001E; // 30 seconds.
     }
 
     NRF_LOG_INFO("Starting scan.\r\n");
@@ -1136,7 +1279,9 @@ int wble_init(void)
     // Start scanning for peripherals and initiate connection
     // with devices that advertise Heart Rate UUID.
     //NRF_LOG_INFO("Heart rate collector example.\r\n");
+
     /* Setting scan parameters to default values */
+    m_scan_param.active   = 0;
     m_scan_param.interval = SCAN_INTERVAL;
     m_scan_param.window   = SCAN_WINDOW;
     
@@ -1195,3 +1340,45 @@ bool wble_set_cfg(uint8_t param_tag, uint8_t param_value)
             return false;
     }
 }
+
+
+bool wble_scan_timeout_set(uint16_t timeout)
+{
+    m_scan_param.timeout = timeout;
+    
+    return true;
+}
+
+
+bool wble_scan_start(uint8_t discovery_type, wble_scan_mode_t mode, uint16_t discovery_length, wble_evt_handler_t evt_handler)
+{
+    if (discovery_type > 4) {
+        return false;
+    }
+    
+    m_discovery_type = discovery_type;
+    p_callback = evt_handler;
+    
+     switch (mode) {
+        case WBLE_SCAN_MODE_ACTIVE:
+            m_scan_param.active = 1;
+            break;
+            
+        case WBLE_SCAN_MODE_PASSIVE:
+            m_scan_param.active = 0;
+            break;
+            
+        default:
+            return false;
+    }
+   
+    m_scan_param.timeout = discovery_length;
+    
+    memset(m_found_devices_list, 0, sizeof(m_found_devices_list));
+    m_num_devices = 0;
+    
+    scan_start();
+    
+    return true;
+}
+

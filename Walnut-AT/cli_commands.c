@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "ble_gap.h"
 #include "cli_commands.h"
 #include "app_uart.h"
 #include "wble.h"
@@ -22,7 +23,39 @@ void uart_put_string(uint8_t *str, uint8_t len)
 }
 
 
-void execute_cli_command(char *str, int str_len)
+void scan_event_handler(wble_evt_t evt, ble_gap_evt_adv_report_t *adv_report)
+{
+    if (evt == WBLE_EVT_ADV_RECEIVED)
+    {
+        memset(resp_str, 0, RESP_SIZE);
+        sprintf(resp_str, "+UBTD:%02x%02x%02x%02x%02x%02x%c,%d,%s,%d,%d,", 
+                adv_report->peer_addr.addr[5], adv_report->peer_addr.addr[4], adv_report->peer_addr.addr[3], 
+                adv_report->peer_addr.addr[2], adv_report->peer_addr.addr[1], adv_report->peer_addr.addr[0], 
+                adv_report->peer_addr.addr_type ? 'r' : 'p',
+                adv_report->rssi, 
+                "",
+                adv_report->scan_rsp ? 1 : 2,
+                adv_report->dlen);
+
+        int len = strlen(resp_str);
+        uint8_t *temp = resp_str + strlen(resp_str);
+        for (int i = 0; i < adv_report->dlen; i++) {
+            sprintf(temp, "%02X", adv_report->data[i]);
+            temp +=2;
+        }
+    
+        strcat(resp_str, "\r\n");
+
+        uart_put_string(resp_str, strlen(resp_str));
+    }
+    else if (evt == WBLE_EVT_SCAN_TIMEOUT)
+    {
+        uart_put_string("OK\r\n", strlen("OK\r\n"));
+    }
+}
+
+
+void execute_cli_command(char *str, uint8_t str_len)
 {
     NRF_LOG_DEBUG("cmd=");
     for (int i = 0; i < str_len; i++) {
@@ -126,9 +159,30 @@ void execute_cli_command(char *str, int str_len)
         // User passkey entry
         NRF_LOG_DEBUG("AT+UBTUPE=\r\n");
         
-    } else if (strncmp(str, "AT+UBTD=", str_len) == 0) {
+    } else if (strncmp(str, "AT+UBTD", strlen("AT+UBTD")) == 0) {
         // Performs an inquiry procedure to find any discoverable devices in the vicinity
-        NRF_LOG_DEBUG("AT+UBTD=\r\n");
+        NRF_LOG_DEBUG("AT+UBTD\r\n");
+        
+        uint32_t discovery_type, mode;
+        uint32_t discovery_length;
+        if (sscanf(str, "AT+UBTD=%d,%d,%d", &discovery_type, &mode, &discovery_length) == 3) {
+            NRF_LOG_DEBUG("AT+UBTD\r\n");
+
+            memset(resp_str, 0, sizeof(resp_str));
+            
+            if (wble_scan_start(discovery_type, mode, discovery_length, scan_event_handler)) 
+            {
+                //uart_put_string("OK\r\n", strlen("OK\r\n"));
+            } else {
+                uart_put_string("ERROR\r\n", strlen("ERROR\r\n"));
+            }
+        } else {
+            // Error parsing input string
+            uart_put_string("ERROR\r\n", strlen("ERROR\r\n"));
+        } 
+        
+        
+        
         
     } else if (strncmp(str, "AT+UBTB=", str_len) == 0) {
         // Performs a GAP bond procedure with another Bluetooth device
