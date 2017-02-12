@@ -37,7 +37,9 @@
 #include "fstorage.h"
 #include "ble_conn_state.h"
 #include "nrf_ble_gatt.h"
-#define NRF_LOG_MODULE_NAME "APP"
+#include "wble.h"
+
+#define NRF_LOG_MODULE_NAME "BLE"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 
@@ -47,7 +49,6 @@
 #define PERIPHERAL_LINK_COUNT       0                                   /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
 #define APP_TIMER_PRESCALER         0                                   /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE     2                                   /**< Size of timer operation queues. */
 
 #define SEC_PARAM_BOND              1                                   /**< Perform bonding. */
 #define SEC_PARAM_MITM              0                                   /**< Man In The Middle protection not required. */
@@ -88,6 +89,15 @@ typedef struct
 } data_t;
 
 
+#define MAX_NUM_DEVICES 50
+typedef struct {
+    uint8_t addr[6];
+    bool    scan_resp_found;
+    bool    adv_found;
+} w_device_t;
+
+
+
 static ble_db_discovery_t    m_ble_db_discovery;           /**< Structure used to identify the DB Discovery module. */
 static ble_hrs_c_t           m_ble_hrs_c;                  /**< Structure used to identify the heart rate client module. */
 static ble_bas_c_t           m_ble_bas_c;                  /**< Structure used to identify the Battery Service client module. */
@@ -99,6 +109,9 @@ static nrf_ble_gatt_t        m_gatt;                       /**< Structure for ga
 
 static bool                  m_retry_db_disc;              /**< Flag to keep track of whether the DB discovery should be retried. */
 static uint16_t              m_pending_db_disc_conn = BLE_CONN_HANDLE_INVALID;  /**< Connection handle for which the DB discovery is retried. */
+
+static wble_discovery_type_t m_discovery_type;
+static wble_evt_handler_t p_callback;
 
 /**
  * @brief Connection parameters requested for connection.
@@ -126,6 +139,11 @@ static const ble_gap_addr_t m_target_periph_addr =
     .addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
     .addr      = {0x8D, 0xFE, 0x23, 0x86, 0x77, 0xD9}
 };
+
+
+    static w_device_t m_found_devices_list[MAX_NUM_DEVICES];
+    static uint8_t m_num_devices;
+    
 
 
 static void scan_start(void);
@@ -158,7 +176,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
  */
 static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
 {
-    ble_hrs_on_db_disc_evt(&m_ble_hrs_c, p_evt);
+//    ble_hrs_on_db_disc_evt(&m_ble_hrs_c, p_evt);
     ble_bas_on_db_disc_evt(&m_ble_bas_c, p_evt);
 }
 
@@ -328,6 +346,48 @@ static void sleep_mode_enter(void)
  * @param[in]   name_to_find   name to search.
  * @return   true if the given name was found, false otherwise.
  */
+static bool find_adv_flags(const ble_gap_evt_adv_report_t *p_adv_report, uint8_t flags)
+{
+    uint32_t err_code;
+    data_t   adv_data;
+    data_t   dev_name;
+
+    // Initialize advertisement report for parsing
+    adv_data.p_data     = (uint8_t *)p_adv_report->data;
+    adv_data.data_len   = p_adv_report->dlen;
+
+
+    //search for advertising names
+    err_code = adv_report_parse(BLE_GAP_AD_TYPE_FLAGS,
+                                &adv_data,
+                                &dev_name);
+    if (err_code == NRF_SUCCESS)
+    {
+//        if (memcmp(name_to_find, dev_name.p_data, dev_name.data_len )== 0)
+        if ((flags & *dev_name.p_data) != 0)
+        {
+            return true;
+        }
+    }
+//    else
+//    {
+//        // Look for the short local name if it was not found as complete
+//        err_code = adv_report_parse(BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME,
+//                                    &adv_data,
+//                                    &dev_name);
+//        if (err_code != NRF_SUCCESS)
+//        {
+//            return false;
+//        }
+//        if (memcmp(m_target_periph_name, dev_name.p_data, dev_name.data_len )== 0)
+//        {
+//            return true;
+//        }
+//    }
+    return false;
+}
+
+
 static bool find_adv_name(const ble_gap_evt_adv_report_t *p_adv_report, const char * name_to_find)
 {
     uint32_t err_code;
@@ -444,6 +504,53 @@ static bool find_adv_uuid(const ble_gap_evt_adv_report_t *p_adv_report, const ui
 }
 
 
+static bool is_first_discovery(ble_gap_evt_adv_report_t adv_report)
+{  
+    for (int i = 0; i < m_num_devices; i++) {
+        if (adv_report.peer_addr.addr[0] == m_found_devices_list[i].addr[0] &&
+            adv_report.peer_addr.addr[1] == m_found_devices_list[i].addr[1] &&
+            adv_report.peer_addr.addr[2] == m_found_devices_list[i].addr[2] &&
+            adv_report.peer_addr.addr[3] == m_found_devices_list[i].addr[3] &&
+            adv_report.peer_addr.addr[4] == m_found_devices_list[i].addr[4] &&
+            adv_report.peer_addr.addr[5] == m_found_devices_list[i].addr[5])
+        {
+            if ((adv_report.scan_rsp == 0) && !m_found_devices_list[i].adv_found)
+            {
+                m_found_devices_list[i].adv_found = true;
+                return true;
+            }
+            if ((adv_report.scan_rsp == 1) && !m_found_devices_list[i].scan_resp_found)
+            {
+                m_found_devices_list[i].scan_resp_found = true;
+                return true;
+            }
+            return false;
+        }
+    }
+    
+    if (m_num_devices < MAX_NUM_DEVICES)
+    {
+        m_found_devices_list[m_num_devices].addr[0] = adv_report.peer_addr.addr[0];
+        m_found_devices_list[m_num_devices].addr[1] = adv_report.peer_addr.addr[1];
+        m_found_devices_list[m_num_devices].addr[2] = adv_report.peer_addr.addr[2];
+        m_found_devices_list[m_num_devices].addr[3] = adv_report.peer_addr.addr[3];
+        m_found_devices_list[m_num_devices].addr[4] = adv_report.peer_addr.addr[4];
+        m_found_devices_list[m_num_devices].addr[5] = adv_report.peer_addr.addr[5];
+        if (adv_report.scan_rsp == 0)
+        {
+            m_found_devices_list[m_num_devices].adv_found = true;
+        }
+        else
+        {
+            m_found_devices_list[m_num_devices].scan_resp_found = true;
+        }
+        m_num_devices++;
+    }
+
+    return true;
+}
+
+
 /**@brief Function for handling the Application's BLE Stack events.
  *
  * @param[in]   p_ble_evt   Bluetooth stack event.
@@ -483,6 +590,42 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 
         case BLE_GAP_EVT_ADV_REPORT:
         {
+            ble_gap_evt_adv_report_t adv_report = p_gap_evt->params.adv_report;
+            if (m_discovery_type == WBLE_DISCOVERY_TYPE_ALL_ONCE) 
+            {
+                if (is_first_discovery(adv_report) && (p_callback != NULL))
+                {
+                    p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                }
+            } 
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_GENERAL_ONCE) 
+            {
+                if (find_adv_flags(&p_gap_evt->params.adv_report, BLE_GAP_ADV_FLAG_LE_GENERAL_DISC_MODE))
+                {
+                    if (is_first_discovery(adv_report) && (p_callback != NULL))
+                    {
+                        p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                    }
+                }
+            }
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_LIMITED_ONCE) 
+            {
+                if (find_adv_flags(&p_gap_evt->params.adv_report, BLE_GAP_ADV_FLAG_LE_LIMITED_DISC_MODE))
+                {
+                    if (is_first_discovery(adv_report) && (p_callback != NULL))
+                    {
+                        p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                    }
+                }
+            }
+            else if (m_discovery_type == WBLE_DISCOVERY_TYPE_ALL_ALWAYS) 
+            {
+                if (p_callback != NULL) 
+                {
+                    p_callback(WBLE_EVT_ADV_RECEIVED, &adv_report);
+                }
+            }
+            
             bool do_connect = false;
             if (is_connect_per_addr)
             {
@@ -556,7 +699,8 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_SCAN)
             {
                 NRF_LOG_DEBUG("Scan timed out.\r\n");
-                scan_start();
+                //scan_start();
+                p_callback(WBLE_EVT_SCAN_TIMEOUT, NULL);
             }
             else if (p_gap_evt->params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
             {
@@ -633,7 +777,7 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     ble_conn_state_on_ble_evt(p_ble_evt);
     pm_on_ble_evt(p_ble_evt);
     ble_db_discovery_on_ble_evt(&m_ble_db_discovery, p_ble_evt);
-    ble_hrs_c_on_ble_evt(&m_ble_hrs_c, p_ble_evt);
+//    ble_hrs_c_on_ble_evt(&m_ble_hrs_c, p_ble_evt);
     ble_bas_c_on_ble_evt(&m_ble_bas_c, p_ble_evt);
     bsp_btn_ble_on_ble_evt(p_ble_evt);
     nrf_ble_gatt_on_ble_evt(&m_gatt, p_ble_evt);
@@ -786,46 +930,46 @@ void bsp_event_handler(bsp_event_t event)
 
 /**@brief Heart Rate Collector Handler.
  */
-static void hrs_c_evt_handler(ble_hrs_c_t * p_hrs_c, ble_hrs_c_evt_t * p_hrs_c_evt)
-{
-    uint32_t err_code;
-
-    switch (p_hrs_c_evt->evt_type)
-    {
-        case BLE_HRS_C_EVT_DISCOVERY_COMPLETE:
-            err_code = ble_hrs_c_handles_assign(p_hrs_c ,
-                                                p_hrs_c_evt->conn_handle,
-                                                &p_hrs_c_evt->params.peer_db);
-            APP_ERROR_CHECK(err_code);
-
-            // Initiate bonding.
-            err_code = pm_conn_secure(p_hrs_c_evt->conn_handle, false);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-            {
-                APP_ERROR_CHECK(err_code);
-            }
-
-            // Heart rate service discovered. Enable notification of Heart Rate Measurement.
-            err_code = ble_hrs_c_hrm_notif_enable(p_hrs_c);
-            APP_ERROR_CHECK(err_code);
-
-            NRF_LOG_DEBUG("Heart rate service discovered.\r\n");
-            break;
-
-        case BLE_HRS_C_EVT_HRM_NOTIFICATION:
-        {
-            NRF_LOG_INFO("Heart Rate = %d.\r\n", p_hrs_c_evt->params.hrm.hr_value);
-            for (int i = 0; i < p_hrs_c_evt->params.hrm.rr_intervals_cnt; i++)
-            {
-                NRF_LOG_DEBUG("rr_interval = %d.\r\n", p_hrs_c_evt->params.hrm.rr_intervals[i]);
-            }
-            break;
-        }
-
-        default:
-            break;
-    }
-}
+//static void hrs_c_evt_handler(ble_hrs_c_t * p_hrs_c, ble_hrs_c_evt_t * p_hrs_c_evt)
+//{
+//    uint32_t err_code;
+//
+//    switch (p_hrs_c_evt->evt_type)
+//    {
+//        case BLE_HRS_C_EVT_DISCOVERY_COMPLETE:
+//            err_code = ble_hrs_c_handles_assign(p_hrs_c ,
+//                                                p_hrs_c_evt->conn_handle,
+//                                                &p_hrs_c_evt->params.peer_db);
+//            APP_ERROR_CHECK(err_code);
+//
+//            // Initiate bonding.
+//            err_code = pm_conn_secure(p_hrs_c_evt->conn_handle, false);
+//            if (err_code != NRF_ERROR_INVALID_STATE)
+//            {
+//                APP_ERROR_CHECK(err_code);
+//            }
+//
+//            // Heart rate service discovered. Enable notification of Heart Rate Measurement.
+//            err_code = ble_hrs_c_hrm_notif_enable(p_hrs_c);
+//            APP_ERROR_CHECK(err_code);
+//
+//            NRF_LOG_DEBUG("Heart rate service discovered.\r\n");
+//            break;
+//
+//        case BLE_HRS_C_EVT_HRM_NOTIFICATION:
+//        {
+//            NRF_LOG_INFO("Heart Rate = %d.\r\n", p_hrs_c_evt->params.hrm.hr_value);
+//            for (int i = 0; i < p_hrs_c_evt->params.hrm.rr_intervals_cnt; i++)
+//            {
+//                NRF_LOG_DEBUG("rr_interval = %d.\r\n", p_hrs_c_evt->params.hrm.rr_intervals[i]);
+//            }
+//            break;
+//        }
+//
+//        default:
+//            break;
+//    }
+//}
 
 
 /**@brief Battery level Collector Handler.
@@ -879,15 +1023,15 @@ static void bas_c_evt_handler(ble_bas_c_t * p_bas_c, ble_bas_c_evt_t * p_bas_c_e
 /**
  * @brief Heart rate collector initialization.
  */
-static void hrs_c_init(void)
-{
-    ble_hrs_c_init_t hrs_c_init_obj;
-
-    hrs_c_init_obj.evt_handler = hrs_c_evt_handler;
-
-    uint32_t err_code = ble_hrs_c_init(&m_ble_hrs_c, &hrs_c_init_obj);
-    APP_ERROR_CHECK(err_code);
-}
+//static void hrs_c_init(void)
+//{
+//    ble_hrs_c_init_t hrs_c_init_obj;
+//
+//    hrs_c_init_obj.evt_handler = hrs_c_evt_handler;
+//
+//    uint32_t err_code = ble_hrs_c_init(&m_ble_hrs_c, &hrs_c_init_obj);
+//    APP_ERROR_CHECK(err_code);
+//}
 
 
 /**
@@ -1017,9 +1161,9 @@ static void scan_start(void)
     ret = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                            whitelist_irks,  &irk_cnt);
 
-    m_scan_param.active   = 0;
-    m_scan_param.interval = SCAN_INTERVAL;
-    m_scan_param.window   = SCAN_WINDOW;
+//    m_scan_param.active   = 0;
+//    m_scan_param.interval = SCAN_INTERVAL;
+//    m_scan_param.window   = SCAN_WINDOW;
 
     if (((addr_cnt == 0) && (irk_cnt == 0)) ||
         (m_whitelist_disabled))
@@ -1033,7 +1177,7 @@ static void scan_start(void)
             m_scan_param.use_whitelist  = 0;
             m_scan_param.adv_dir_report = 0;
         #endif
-        m_scan_param.timeout  = 0x0000; // No timeout.
+//        m_scan_param.timeout  = 0x0000; // No timeout.
     }
     else
     {
@@ -1048,7 +1192,7 @@ static void scan_start(void)
             m_scan_param.use_whitelist  = 1;
             m_scan_param.adv_dir_report = 0;
         #endif
-        m_scan_param.timeout  = 0x001E; // 30 seconds.
+//        m_scan_param.timeout  = 0x001E; // 30 seconds.
     }
 
     NRF_LOG_INFO("Starting scan.\r\n");
@@ -1078,24 +1222,6 @@ static void buttons_leds_init(bool * p_erase_bonds)
     APP_ERROR_CHECK(err_code);
 
     *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
-}
-
-
-/**@brief Function for initializing the nrf log module.
- */
-static void log_init(void)
-{
-    ret_code_t err_code = NRF_LOG_INIT(NULL);
-    APP_ERROR_CHECK(err_code);
-}
-
-
-/** @brief Function for the Power manager.
- */
-static void power_manage(void)
-{
-    uint32_t err_code = sd_app_evt_wait();
-    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -1133,14 +1259,12 @@ void gatt_init(void)
 }
 
 
-int main(void)
+int wble_init(void)
 {
     bool erase_bonds;
 
     // Initialize.
-    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, NULL);
     buttons_leds_init(&erase_bonds);
-    log_init();
     ble_stack_init();
     peer_manager_init(erase_bonds);
     if (erase_bonds == true)
@@ -1149,21 +1273,112 @@ int main(void)
     }
     gatt_init();
     db_discovery_init();
-    hrs_c_init();
+//    hrs_c_init();
     bas_c_init();
 
     // Start scanning for peripherals and initiate connection
     // with devices that advertise Heart Rate UUID.
-    NRF_LOG_INFO("Heart rate collector example.\r\n");
-    scan_start();
+    //NRF_LOG_INFO("Heart rate collector example.\r\n");
 
-    for (;;)
-    {
-        if (NRF_LOG_PROCESS() == false)
-        {
-            power_manage();
-        }
+    /* Setting scan parameters to default values */
+    m_scan_param.active   = 0;
+    m_scan_param.interval = SCAN_INTERVAL;
+    m_scan_param.window   = SCAN_WINDOW;
+    
+    //scan_start();
+}
+
+
+bool wble_get_cfg(uint8_t param_tag, uint8_t *resp_str, uint8_t *resp_str_len)
+{
+    uint32_t resp;
+// TODO: Add more options to read from    
+    switch (param_tag) {
+        case 9:
+            resp = m_scan_param.interval;
+            break;
+            
+        case 10:
+            resp = m_scan_param.window;
+            break;
+            
+        default:
+            return false;
+    }
+        
+    *resp_str_len = sprintf(resp_str, "+UBTLECFG:%d,%d\r\n", param_tag, resp);
+    
+    if (*resp_str_len < 0) {
+        return false;
+    }
+    
+    return true;
+}
+
+
+bool wble_set_cfg(uint8_t param_tag, uint8_t param_value)
+{
+    // TODO: Add more options to switch
+    switch (param_tag) {
+        case 9:
+            if ((param_value >= 16) && (param_value <= 16384) && (param_value >= m_scan_param.window)) {
+                m_scan_param.interval = param_value;
+            } else {
+                return false;
+            }
+            break;
+            
+        case 10:
+            if ((param_value >= 16) && (param_value <= 16384) && (param_value <= m_scan_param.interval)) {
+                m_scan_param.window = param_value;
+            } else {
+                return false;
+            }
+            break;
+            
+        default:
+            return false;
     }
 }
 
+
+bool wble_scan_timeout_set(uint16_t timeout)
+{
+    m_scan_param.timeout = timeout;
+    
+    return true;
+}
+
+
+bool wble_scan_start(uint8_t discovery_type, wble_scan_mode_t mode, uint16_t discovery_length, wble_evt_handler_t evt_handler)
+{
+    if (discovery_type > 4) {
+        return false;
+    }
+    
+    m_discovery_type = discovery_type;
+    p_callback = evt_handler;
+    
+     switch (mode) {
+        case WBLE_SCAN_MODE_ACTIVE:
+            m_scan_param.active = 1;
+            break;
+            
+        case WBLE_SCAN_MODE_PASSIVE:
+            m_scan_param.active = 0;
+            break;
+            
+        default:
+            return false;
+    }
+   
+    m_scan_param.timeout = discovery_length;
+    
+    memset(m_found_devices_list, 0, sizeof(m_found_devices_list));
+    m_num_devices = 0;
+    
+    scan_start();
+    
+    return true;
+}
 

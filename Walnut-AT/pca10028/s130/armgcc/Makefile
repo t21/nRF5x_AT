@@ -1,14 +1,11 @@
-PROJECT_NAME     := AT_c_pca10028_s130
-TARGETS          := release debug
+PROJECT_NAME     := ble_app_hrs_c_pca10028_s130
+TARGETS          := nrf51422_xxac
 OUTPUT_DIRECTORY := _build
 
-SDK_ROOT := ../../../../nRF5_SDK_12
+SDK_ROOT := ../../../../../..
 PROJ_DIR := ../../..
 
-$(OUTPUT_DIRECTORY)/release.out: \
-  LINKER_SCRIPT  := ble_app_hrs_c_gcc_nrf51.ld
-
-$(OUTPUT_DIRECTORY)/debug.out: \
+$(OUTPUT_DIRECTORY)/nrf51422_xxac.out: \
   LINKER_SCRIPT  := ble_app_hrs_c_gcc_nrf51.ld
 
 # Source files common to all targets
@@ -182,20 +179,13 @@ CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DNRF51422
 CFLAGS += -DNRF_SD_BLE_API_VERSION=2
-debug: CFLAGS += -DNRF_LOG_ENABLED
-debug: CFLAGS += -DNRF_LOG_DEFAULT_LEVEL=4
-flash_debug: CFLAGS += -DNRF_LOG_ENABLED
-flash_debug: CFLAGS += -DNRF_LOG_DEFAULT_LEVEL=4
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs
-release: CFLAGS +=  -Wall -Werror -O3 -g3
-flash_release: CFLAGS +=  -Wall -Werror -O3 -g3
-debug: CFLAGS +=  -Wall -Werror -O0 -g3
-flash_debug: CFLAGS +=  -Wall -Werror -O0 -g3
+CFLAGS +=  -Wall -Werror -O3 -g3
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section, this allows linker to discard unused ones
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
-CFLAGS += -fno-builtin --short-enums
+CFLAGS += -fno-builtin --short-enums 
 
 # C++ flags common to all targets
 CXXFLAGS += \
@@ -221,18 +211,15 @@ LDFLAGS += -Wl,--gc-sections
 LDFLAGS += --specs=nano.specs -lc -lnosys
 
 
-.PHONY: $(TARGETS) default all clean help flash_release flash_debug flash_softdevice
+.PHONY: $(TARGETS) default all clean help flash flash_softdevice
 
 # Default target - first one defined
-default: debug
+default: nrf51422_xxac
 
 # Print all targets that can be built
 help:
 	@echo following targets are available:
-	@echo 	release (default) - -O3, no logs
-	@echo 	debug             - -O0, logs enabled
-	@echo 	flash_release     - build release and flash target
-	@echo 	flash_debug       - build debug and flash target
+	@echo 	nrf51422_xxac
 
 TEMPLATE_PATH := $(SDK_ROOT)/components/toolchain/gcc
 
@@ -241,12 +228,7 @@ include $(TEMPLATE_PATH)/Makefile.common
 $(foreach target, $(TARGETS), $(call define_target, $(target)))
 
 # Flash the program
-flash_release: $(OUTPUT_DIRECTORY)/release.hex
-	@echo Flashing: $<
-	nrfjprog --program $< -f nrf51 --sectorerase
-	nrfjprog --reset -f nrf51
-
-flash_debug: $(OUTPUT_DIRECTORY)/debug.hex
+flash: $(OUTPUT_DIRECTORY)/nrf51422_xxac.hex
 	@echo Flashing: $<
 	nrfjprog --program $< -f nrf51 --sectorerase
 	nrfjprog --reset -f nrf51
@@ -254,7 +236,7 @@ flash_debug: $(OUTPUT_DIRECTORY)/debug.hex
 # Flash softdevice
 flash_softdevice:
 	@echo Flashing: s130_nrf51_2.0.1_softdevice.hex
-	nrfjprog --program $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex -f nrf51 --sectorerase
+	nrfjprog --program $(SDK_ROOT)/components/softdevice/s130/hex/s130_nrf51_2.0.1_softdevice.hex -f nrf51 --sectorerase 
 	nrfjprog --reset -f nrf51
 
 erase:
